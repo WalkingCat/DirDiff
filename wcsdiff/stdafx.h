@@ -1,5 +1,7 @@
 #pragma once
 
+#include "..\witutils\find_files_wcs.h"
+
 #include "targetver.h"
 
 #include <stdio.h>
@@ -13,8 +15,6 @@
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
-#include <regex>
-#include <map>
 #include <set>
 
 #define VC_EXTRALEAN

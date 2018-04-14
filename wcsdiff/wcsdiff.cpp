@@ -14,11 +14,11 @@ bool print_diff(wcs_diff diff) {
 	}
 }
 
-struct meta_diff_elem {
+struct wcs_diff_elem {
 	wcs_diff diff;
 	wstring name;
-	meta_diff_elem() : diff(wcs_diff::same) {}
-	meta_diff_elem(wcs_diff _diff, const wstring& _name) : diff(_diff), name(_name) {}
+	wcs_diff_elem() : diff(wcs_diff::same) {}
+	wcs_diff_elem(wcs_diff _diff, const wstring& _name) : diff(_diff), name(_name) {}
 };
 
 enum diff_options {
@@ -55,19 +55,10 @@ void print_usage() {
 	}
 }
 
-struct wcs_component {
-	wstring folder;
-	set<wstring> files;
-//	wcs_component(const wstring& _folder, set<wstring>&& files) : name(_name), folder(_folder) {}
+struct wcs_diff_component : wcs_diff_elem {
+	vector<wcs_diff_elem> files;
+	wcs_diff_component(wcs_diff _diff, const wstring& _name) : wcs_diff_elem(_diff, _name) {}
 };
-
-struct wcs_diff_component : meta_diff_elem {
-	vector<meta_diff_elem> files;
-	wcs_diff_component(wcs_diff _diff, const wstring& _name) : meta_diff_elem(_diff, _name) {}
-};
-
-vector<wstring> find_files(const wchar_t* directory);
-map<wstring, vector<wstring>> find_components(const wstring& directory);
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -112,8 +103,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		return 0;
 	}
 
-	const auto new_components = find_components(new_folder);
-	const auto old_components = find_components(old_folder);
+	const auto new_components = find_files_wcs(new_folder);
+	const auto old_components = find_files_wcs(old_folder);
 
 	printf_s(" new folder: %S%S\n", new_folder.c_str(), !new_components.empty() ? L"" : L" (EMPTY!)");
 	printf_s(" old folder: %S%S\n", old_folder.c_str(), !old_components.empty() ? L"" : L" (EMPTY!)");
@@ -193,55 +184,4 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	return 0;
-}
-
-vector<wstring> find_files(const wchar_t * pattern)
-{
-	vector<wstring> ret;
-	wchar_t path[MAX_PATH] = {};
-	wcscpy_s(path, pattern);
-	WIN32_FIND_DATA fd;
-	HANDLE find = ::FindFirstFile(pattern, &fd);
-	if (find != INVALID_HANDLE_VALUE) {
-		do {
-			if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-				ret.emplace_back(fd.cFileName);
-			}
-		} while (::FindNextFile(find, &fd));
-		::FindClose(find);
-	}
-	return ret;
-}
-
-map<wstring, vector<wstring>> find_components(const wstring & directory)
-{
-	map<wstring, vector<wstring>> ret;
-
-	// ex. amd64_wvms_vsft.inf.resources_31bf3856ad364e35_10.0.14393.0_en-us_f32e284e2439eb0bs
-	wregex re(L"(.*)_[0-9a-f]+_[0-9\\.]+_[0-9a-z-]+_[0-9a-f]+");
-	wsmatch match;
-
-	wchar_t path[MAX_PATH] = {};
-	wcscpy_s(path, directory.c_str());
-	PathAppend(path, L"*");
-	WIN32_FIND_DATAW fd;
-	HANDLE find = ::FindFirstFileW(path, &fd);
-	if (find != INVALID_HANDLE_VALUE) {
-		do {
-			if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) {
-				wstring file(fd.cFileName);
-				if (regex_match(file, match, re)) {
-					PathRemoveFileSpec(path);
-					PathCombine(path, path, fd.cFileName);
-					PathAppend(path, L"*");
-					auto& files = ret[match[1].str()];
-					const auto& found_files = find_files(path);
-					files.insert(files.end(), found_files.begin(), found_files.end());
-					PathRemoveFileSpec(path);
-				}
-			}
-		} while (::FindNextFileW(find, &fd));
-		::FindClose(find);
-	}
-	return ret;
 }
