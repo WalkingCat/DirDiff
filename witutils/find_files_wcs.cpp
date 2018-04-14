@@ -36,9 +36,9 @@ wstring generate_key_from_manifest(const wstring& parent, const wstring& dir) {
 				XmlNodeType node_type;
 				while (SUCCEEDED(xml_reader->Read(&node_type))) {
 					if (node_type == XmlNodeType_Element) {
-						const wchar_t * name = nullptr;
-						xml_reader->GetQualifiedName(&name, nullptr);
-						if (wcscmp(name, L"assemblyIdentity") == 0) {
+						const wchar_t * elem_name = nullptr;
+						xml_reader->GetQualifiedName(&elem_name, nullptr);
+						if (wcscmp(elem_name, L"assemblyIdentity") == 0) {
 							auto name = read_attribute_value(xml_reader, L"name");
 							auto arch = read_attribute_value(xml_reader, L"processorArchitecture"); 
 							auto lang = read_attribute_value(xml_reader, L"language");
@@ -61,9 +61,9 @@ wstring generate_key_from_manifest(const wstring& parent, const wstring& dir) {
 	return ret;
 }
 
-map<wstring, vector<wstring>> find_files_wcs(const wstring & directory)
+map<wstring, map<wstring, wstring>> find_files_wcs(const wstring & directory)
 {
-	map<wstring, vector<wstring>> ret;
+	map<wstring, map<wstring, wstring>> ret;
 
 	// ex. amd64_wvms_vsft.inf.resources_31bf3856ad364e35_10.0.14393.0_en-us_f32e284e2439eb0bs
 	wregex re(L"(.*)_[0-9a-f]+_[0-9\\.]+_[0-9a-z-]+_[0-9a-f]+");
@@ -88,7 +88,7 @@ map<wstring, vector<wstring>> find_files_wcs(const wstring & directory)
 					PathAppend(path, L"*");
 					auto& files = ret[key.c_str()];
 					const auto& found_files = find_files(path);
-					files.insert(files.end(), found_files.begin(), found_files.end());
+					files.insert(found_files.begin(), found_files.end());
 					PathRemoveFileSpec(path);
 				}
 			}

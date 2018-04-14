@@ -3,9 +3,9 @@
 
 using namespace std;
 
-vector<wstring> find_files(const wchar_t * pattern)
+map<wstring, wstring> find_files(const wchar_t * pattern)
 {
-	vector<wstring> ret;
+	map<wstring, wstring> ret;
 	wchar_t path[MAX_PATH] = {};
 	wcscpy_s(path, pattern);
 	WIN32_FIND_DATA fd;
@@ -13,7 +13,11 @@ vector<wstring> find_files(const wchar_t * pattern)
 	if (find != INVALID_HANDLE_VALUE) {
 		do {
 			if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-				ret.emplace_back(fd.cFileName);
+				PathRemoveFileSpec(path);
+				PathCombine(path, path, fd.cFileName);
+				wstring name = fd.cFileName;
+				for (auto& c : name) c = towlower(c);
+				ret[name] = path;
 			}
 		} while (::FindNextFile(find, &fd));
 		::FindClose(find);

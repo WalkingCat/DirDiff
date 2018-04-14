@@ -123,23 +123,24 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (old_component == old_components.end()) { // not found in old, so its new, and all members are new
 			diff.diff = wcs_diff::added;
 			for (auto& new_file : new_component.second) {
-				diff.files.emplace_back(wcs_diff::added, new_file);
+				diff.files.emplace_back(wcs_diff::added, new_file.first);
 			}
 			component_diffs.emplace_back(move(diff));
 		} else {
 			auto& old_files = old_component->second;
 			for (auto& new_file : new_files) {
-				if (find_if(begin(old_files), end(old_files), [&](const wstring& s) {
-					return _wcsicmp(s.c_str(), new_file.c_str()) == 0;
+				if (find_if(begin(old_files), end(old_files), [&](const pair<wstring, wstring>& s) {
+					return _wcsicmp(s.first.c_str(), new_file.first.c_str()) == 0;
 				}) == old_files.end()) {
-					diff.files.emplace_back(wcs_diff::added, new_file);
+					diff.files.emplace_back(wcs_diff::added, new_file.first);
 				}
 			}
 			for (auto& old_file : old_files) {
-				if (find_if(begin(new_files), end(new_files), [&](const wstring& s) {
-					return _wcsicmp(s.c_str(), old_file.c_str()) == 0;
-				}) == new_files.end()) {
-					diff.files.emplace_back(wcs_diff::removed, old_file);
+				if (find_if(begin(new_files), end(new_files), [&](const pair<wstring, wstring>& s) {
+						return _wcsicmp(s.first.c_str(), old_file.first.c_str()) == 0;
+					}) == new_files.end())
+				{
+					diff.files.emplace_back(wcs_diff::removed, old_file.first);
 				}
 			}
 			if (!diff.files.empty()) {
@@ -153,7 +154,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (new_components.find(old_component.first) == new_components.end()) {
 			wcs_diff_component diff(wcs_diff::removed, old_component.first);
 			for (auto& old_file : old_component.second) {
-				diff.files.emplace_back(wcs_diff::removed, old_file);
+				diff.files.emplace_back(wcs_diff::removed, old_file.first);
 			}
 			component_diffs.push_back(move(diff));
 		}

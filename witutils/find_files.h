@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
-std::vector<std::wstring> find_files(const wchar_t* directory);
+std::map<std::wstring, std::wstring> find_files(const wchar_t* pattern);
