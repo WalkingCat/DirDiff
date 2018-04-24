@@ -2,25 +2,6 @@
 
 using namespace std;
 
-enum class wcs_diff : int { same, removed, child_changed, added };
-
-bool print_diff(wcs_diff diff) {
-	switch (diff) {
-	case wcs_diff::same: /* printf_s("= "); return true;*/ return false;
-	case wcs_diff::removed: printf_s("- "); return true;
-	case wcs_diff::child_changed: printf_s("| "); return true;
-	case wcs_diff::added: printf_s("+ "); return true;
-	default: printf_s("? "); return true;
-	}
-}
-
-struct wcs_diff_elem {
-	wcs_diff diff;
-	wstring name;
-	wcs_diff_elem() : diff(wcs_diff::same) {}
-	wcs_diff_elem(wcs_diff _diff, const wstring& _name) : diff(_diff), name(_name) {}
-};
-
 enum diff_options {
 	diffNone		= 0x0,
 	diffOld			= 0x1,
@@ -55,13 +36,10 @@ void print_usage() {
 	}
 }
 
-struct wcs_diff_component : wcs_diff_elem {
-	vector<wcs_diff_elem> files;
-	wcs_diff_component(wcs_diff _diff, const wstring& _name) : wcs_diff_elem(_diff, _name) {}
-};
-
 int _tmain(int argc, _TCHAR* argv[])
 {
+	auto out = stdout;
+
 	int options = diffNone;
 	const wchar_t* err_arg = nullptr;
 	wstring new_folder, old_folder;
@@ -103,86 +81,67 @@ int _tmain(int argc, _TCHAR* argv[])
 		return 0;
 	}
 
-	const auto new_components = find_files_wcs(new_folder);
-	const auto old_components = find_files_wcs(old_folder);
+	fwprintf_s(out, L" new folder: %ws", new_folder.c_str());
+	auto new_file_groups = find_files_wcs(new_folder);
+	fwprintf_s(out, L"%ws\n", !new_file_groups.empty() ? L"" : L" (EMPTY!)");
 
-	printf_s(" new folder: %S%S\n", new_folder.c_str(), !new_components.empty() ? L"" : L" (EMPTY!)");
-	printf_s(" old folder: %S%S\n", old_folder.c_str(), !old_components.empty() ? L"" : L" (EMPTY!)");
+	fwprintf_s(out, L" old folder: %ws", old_folder.c_str());
+	auto old_file_groups = find_files_wcs(old_folder);
+	fwprintf_s(out, L"%ws\n", !old_file_groups.empty() ? L"" : L" (EMPTY!)");
 
-	printf_s("\n");
+	fwprintf_s(out, L"\n");
 
-	printf_s(" diff legends: +: added, -: removed, |: files changed\n");
-	printf_s("\n");
+	if (new_file_groups.empty() & old_file_groups.empty()) return 0; // at least one of them must exists
 
-	vector<wcs_diff_component> component_diffs;
+	fwprintf_s(out, L" legends: +: added, -: removed, *: changed\n");
 
-	for (const auto& new_component : new_components) {
-		auto& new_files = new_component.second;
-		wcs_diff_component diff(wcs_diff::same, new_component.first);
-		auto old_component = old_components.find(new_component.first);
-		if (old_component == old_components.end()) { // not found in old, so its new, and all members are new
-			diff.diff = wcs_diff::added;
-			for (auto& new_file : new_component.second) {
-				diff.files.emplace_back(wcs_diff::added, new_file.first);
-			}
-			component_diffs.emplace_back(move(diff));
-		} else {
-			auto& old_files = old_component->second;
-			for (auto& new_file : new_files) {
-				if (find_if(begin(old_files), end(old_files), [&](const pair<wstring, wstring>& s) {
-					return _wcsicmp(s.first.c_str(), new_file.first.c_str()) == 0;
-				}) == old_files.end()) {
-					diff.files.emplace_back(wcs_diff::added, new_file.first);
+	const map<wstring, wstring> empty_files;
+	diff_maps(new_file_groups, old_file_groups,
+		[&](const wstring& group_name, const map<wstring, wstring>* new_files, const map<wstring, wstring>* old_files) {
+			bool printed_group_name = false;
+			wchar_t printed_group_prefix = L' ';
+			auto print_group_name = [&](const wchar_t prefix) {
+				if (!printed_group_name) {
+					fwprintf_s(out, L"\n %wc %ws (\n", prefix, group_name.c_str());
+					printed_group_name = true;
+					printed_group_prefix = prefix;
 				}
-			}
-			for (auto& old_file : old_files) {
-				if (find_if(begin(new_files), end(new_files), [&](const pair<wstring, wstring>& s) {
-						return _wcsicmp(s.first.c_str(), old_file.first.c_str()) == 0;
-					}) == new_files.end())
-				{
-					diff.files.emplace_back(wcs_diff::removed, old_file.first);
+			};
+
+			bool printed_previous_file_name = false;
+			diff_maps(new_files ? *new_files : empty_files, old_files ? *old_files : empty_files,
+				[&](const wstring& file_name, const wstring * new_file, const wstring * old_file) {
+					bool printed_file_name = false;
+					auto print_file_name = [&](const wchar_t prefix) {
+						if (!printed_file_name) {
+							print_group_name(new_files ? old_files ? L'*' : L'+' : L'-');
+							if (printed_previous_file_name) {
+								fwprintf_s(out, L"\n");
+							}
+							fwprintf_s(out, L"   %wc %ws\n", prefix, file_name.c_str());
+							//printed_previous_file_name = printed_file_name = true;
+						}
+					};
+
+					if (new_file == nullptr) {
+						print_file_name('-');
+						return;
+					}
+
+					if (old_file == nullptr) {
+						print_file_name('+');
+					}
+
+					//TODO: diff files
 				}
-			}
-			if (!diff.files.empty()) {
-				diff.diff = wcs_diff::child_changed;
-				component_diffs.emplace_back(move(diff));
-			}
+			);
+
+			if (printed_group_name)
+				fwprintf_s(out, L" %wc )\n", printed_group_prefix);
 		}
-	}
+	);
 
-	for (const auto& old_component : old_components) {
-		if (new_components.find(old_component.first) == new_components.end()) {
-			wcs_diff_component diff(wcs_diff::removed, old_component.first);
-			for (auto& old_file : old_component.second) {
-				diff.files.emplace_back(wcs_diff::removed, old_file.first);
-			}
-			component_diffs.push_back(move(diff));
-		}
-	}
-
-//	sort(begin(component_diffs), end(component_diffs));
-
-	if (component_diffs.empty()) {
-		printf_s(" found no differences.\n");
-	} else {
-		for (const auto& diff : component_diffs) {
-			if (!print_diff(diff.diff)) continue;
-
-			printf_s("%S", diff.name.c_str());
-
-			printf_s(" (\n");
-			for (const auto& f : diff.files) {
-				if (!print_diff(f.diff)) continue;
-
-				printf_s("\t%S\n", f.name.c_str());
-			}
-
-			print_diff(diff.diff);
-			printf_s(")\n");
-
-			printf_s("\n");
-		}
-	}
+	fwprintf_s(out, L"\n");
 
 	return 0;
 }
