@@ -81,13 +81,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		return 0;
 	}
 
-	fwprintf_s(out, L" new folder: %ws", new_folder.c_str());
+	fwprintf_s(out, L" new folder: %ls", new_folder.c_str());
 	auto new_file_groups = find_files_wcs(new_folder);
-	fwprintf_s(out, L"%ws\n", !new_file_groups.empty() ? L"" : L" (EMPTY!)");
+	fwprintf_s(out, L"%ls\n", !new_file_groups.empty() ? L"" : L" (EMPTY!)");
 
-	fwprintf_s(out, L" old folder: %ws", old_folder.c_str());
+	fwprintf_s(out, L" old folder: %ls", old_folder.c_str());
 	auto old_file_groups = find_files_wcs(old_folder);
-	fwprintf_s(out, L"%ws\n", !old_file_groups.empty() ? L"" : L" (EMPTY!)");
+	fwprintf_s(out, L"%ls\n", !old_file_groups.empty() ? L"" : L" (EMPTY!)");
 
 	fwprintf_s(out, L"\n");
 
@@ -102,7 +102,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			wchar_t printed_group_prefix = L' ';
 			auto print_group_name = [&](const wchar_t prefix) {
 				if (!printed_group_name) {
-					fwprintf_s(out, L"\n %wc %ws (\n", prefix, group_name.c_str());
+					fwprintf_s(out, L"\n %lc %ls (\n", prefix, group_name.c_str());
 					printed_group_name = true;
 					printed_group_prefix = prefix;
 				}
@@ -118,7 +118,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							if (printed_previous_file_name) {
 								fwprintf_s(out, L"\n");
 							}
-							fwprintf_s(out, L"   %wc %ws\n", prefix, file_name.c_str());
+							fwprintf_s(out, L"   %lc %ls\n", prefix, file_name.c_str());
 							//printed_previous_file_name = printed_file_name = true;
 						}
 					};
@@ -137,7 +137,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			);
 
 			if (printed_group_name)
-				fwprintf_s(out, L" %wc )\n", printed_group_prefix);
+				fwprintf_s(out, L" %lc )\n", printed_group_prefix);
 		}
 	);
 
