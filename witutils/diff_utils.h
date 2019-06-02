@@ -1,9 +1,11 @@
 #pragma once
 #include <map>
 #include <set>
+#include <vector>
+#include <deque>
 
 template<typename TKey, typename TValue, typename TFunc>
-void diff_maps(const std::map<TKey, TValue>& new_map, const std::map<TKey, TValue>& old_map, TFunc& func)
+void diff_maps(const std::map<TKey, TValue>& new_map, const std::map<TKey, TValue>& old_map, const TFunc& func)
 {
 	auto new_it = new_map.begin();
 	auto old_it = old_map.begin();
@@ -39,7 +41,7 @@ void diff_maps(const std::map<TKey, TValue>& new_map, const std::map<TKey, TValu
 }
 
 template<typename TValue, typename TFunc>
-void diff_sets(const std::set<TValue>& new_set, const std::set<TValue>& old_set, TFunc& func)
+void diff_sets(const std::set<TValue>& new_set, const std::set<TValue>& old_set, const TFunc& func)
 {
 	auto new_it = new_set.begin();
 	auto old_it = old_set.begin();
@@ -81,8 +83,8 @@ void diff_sequences(const std::vector<TValue>& new_seq, const std::vector<TValue
 	const size_t M = std::size(A), N = std::size(B), delta = N - M, offset = M + 1;
 
 	struct P { long long x; long long y; long long k; };
-	vector<P> path_coordinates;
-	vector<long long> path(M + N + 3, -1);
+	std::vector<P> path_coordinates;
+	std::vector<long long> path(M + N + 3, -1);
 
 	auto snake = [&](const long long& k, const long long& above, const long long& below) -> long long {
 		const long long r = above > below ? path[(size_t)k - 1 + offset] : path[(size_t)k + 1 + offset];
@@ -99,7 +101,7 @@ void diff_sequences(const std::vector<TValue>& new_seq, const std::vector<TValue
 		return y;
 	};
 
-	vector<long long> fp(M + N + 3, -1);
+	std::vector<long long> fp(M + N + 3, -1);
 	for (long long p = 0; ; ++p) {
 		for (long long k = -p; k <= static_cast<long long>(delta) - 1; ++k) {
 			fp[size_t(k + offset)] = snake(k, fp[size_t(k - 1 + offset)] + 1, fp[size_t(k + 1 + offset)]);
@@ -112,28 +114,72 @@ void diff_sequences(const std::vector<TValue>& new_seq, const std::vector<TValue
 		if (fp[delta + offset] == static_cast<long long>(N)) break;
 	}
 
-	vector<P> epc;
+	std::vector<P> epc;
 	for (long long r = path[delta + offset]; r != -1;) {
 		const auto& p = path_coordinates[size_t(r)];
 		epc.push_back(P{ p.x, p.y, 0 });
 		r = p.k;
 	}
 
+	auto report_change = [&](long long x, long long y) {
+		auto a = (x >= 0) ? &A[size_t(x)] : nullptr;
+		auto b = (y >= 0) ? &B[size_t(y)] : nullptr;
+		if (swapped) func(b, a); else func(a, b);
+	};
+
+	std::deque<long long> xs, ys;
+	auto report_changes = [&](bool all) {
+		const auto xsize = xs.size(), ysize = ys.size();
+		const auto min_size = (xsize < ysize) ? xsize : ysize;
+		for (size_t i = 0; i < min_size; ++i) {
+			report_change(xs[i], ys[i]);
+		}
+		if (all) {
+			for (size_t i = min_size; i < xsize; ++i) {
+				report_change(xs[i], -1);
+			}
+			xs.clear();
+			for (size_t i = min_size; i < ysize; ++i) {
+				report_change(-1, ys[i]);
+			}
+			ys.clear();
+		} else {
+			xs.erase(xs.begin(), xs.begin() + min_size);
+			ys.erase(ys.begin(), ys.begin() + min_size);
+		}
+	};
+
+	auto record_change = [&](long long x, long long y) {
+		if ((x >= 0) && (y >=0)) {
+			report_changes(true);
+			report_change(x, y);
+		} else if (x >= 0) {
+			xs.push_back(x);
+			report_changes(false);
+		} else if (y >= 0) {
+			ys.push_back(y);
+			report_changes(false);
+		} else {
+			/// should not reach here
+		}
+	};
+
 	long long x = 0, y = 0; // coordinates
 	for (size_t i = epc.size(); i != 0; --i) {
 		const auto& p = epc[i - 1];
 		while ((x < p.x) || (y < p.y)) {
 			if ((p.y - p.x) >(y - x)) {
-				if (swapped) func(&B[size_t(y)], nullptr); else func(nullptr, &B[size_t(y)]);
+				record_change(-1, y);
 				++y;
 			} else if ((p.y - p.x) < (y - x)) {
-				if (swapped) func(nullptr, &A[size_t(x)]); else func(&A[size_t(x)], nullptr);
+				record_change(x, -1);
 				++x;
 			} else {
-				if (swapped) func(&B[size_t(y)], &A[size_t(x)]); else func(&A[size_t(x)], &B[size_t(y)]);
+				record_change(x, y);
 				++x; ++y;
 			}
 		}
 	}
+	report_changes(true);
 }
 
