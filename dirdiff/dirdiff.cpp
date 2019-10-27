@@ -4,14 +4,14 @@ using namespace std;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	printf_s("\n WcsDiff v0.1 https://github.com/WalkingCat/WcsDiff\n\n");
+	printf_s("\n DirDiff v0.1 https://github.com/WalkingCat/DirDiff\n\n");
 	const auto& params = init_diff_params(argc, argv);
 
 	if (params.show_help || (!params.error.empty()) || (params.new_files_pattern.empty() && params.old_files_pattern.empty())) {
 		if (!params.error.empty()) {
 			printf_s("\t%ls\n\n", params.error.c_str());
 		}
-		if (params.show_help) print_cmdl_usage(L"wcsdiff", diff_cmdl::options, diff_cmdl::default_option);
+		if (params.show_help) print_cmdl_usage(L"dirdiff", diff_cmdl::options, diff_cmdl::default_option);
 		return 0;
 	}
 

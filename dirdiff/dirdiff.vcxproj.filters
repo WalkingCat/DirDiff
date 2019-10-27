@@ -6,6 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="wcsdiff.cpp" />
+    <ClCompile Include="dirdiff.cpp" />
   </ItemGroup>
 </Project>
