@@ -2,6 +2,7 @@
 
 #include "../witutils/diff_utils.h"
 #include "../witutils/diff_commons.h"
+#include "../witutils/str_utils.h"
 
 #include "targetver.h"
 
@@ -17,6 +18,7 @@
 #include <algorithm>
 #include <functional>
 #include <set>
+#include <filesystem>
 
 #define VC_EXTRALEAN
 #include <windows.h>

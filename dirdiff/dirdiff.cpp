@@ -4,7 +4,7 @@ using namespace std;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	printf_s("\n DirDiff v0.1 https://github.com/WalkingCat/DirDiff\n\n");
+	printf_s("\n DirDiff v0.2 https://github.com/WalkingCat/DirDiff\n\n");
 	const auto& params = init_diff_params(argc, argv);
 
 	if (params.show_help || (!params.error.empty()) || (params.new_files_pattern.empty() && params.old_files_pattern.empty())) {
@@ -33,7 +33,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			bool printed_previous_file_name = false;
 			diff_maps(new_files ? *new_files : empty_files, old_files ? *old_files : empty_files,
-				[&](const wstring& file_name, const wstring * new_file, const wstring * old_file) {
+				[&](const wstring& file_name, const wstring* new_file, const wstring* old_file) {
 					bool printed_file_name = false;
 					auto print_file_name = [&](const wchar_t prefix) {
 						if (!printed_file_name) {
@@ -53,9 +53,24 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					if (old_file == nullptr) {
 						print_file_name('+');
+						return;
 					}
 
-					//TODO: diff files
+					static const std::set<wstring_view> text_file_exts = {
+						L".inf_loc"
+					};
+
+					const auto file_ext = tolower(filesystem::path(file_name).extension().wstring());
+					if (text_file_exts.find(file_ext) != text_file_exts.end()) {
+						const filesystem::path new_path(*new_file), old_path(*old_file);
+
+						//TODO: diff textual file contents
+						if (filesystem::file_size(new_path) != filesystem::file_size(old_path)) {
+							print_file_name('*');
+							printf_s("     size: %I64u <-> %I64u\n", filesystem::file_size(new_path), filesystem::file_size(old_path));
+							return;
+						}
+					}
 				}
 			);
 
