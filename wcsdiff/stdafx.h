@@ -1,7 +1,7 @@
 #pragma once
 
-#include "..\witutils\find_files_wcs.h"
-#include "..\witutils\diff_utils.h"
+#include "../witutils/diff_utils.h"
+#include "../witutils/diff_commons.h"
 
 #include "targetver.h"
 
