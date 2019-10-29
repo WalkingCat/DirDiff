@@ -3,6 +3,7 @@
 #include "../witutils/diff_utils.h"
 #include "../witutils/diff_commons.h"
 #include "../witutils/str_utils.h"
+#include "../witutils/file_utils.h"
 
 #include "targetver.h"
 

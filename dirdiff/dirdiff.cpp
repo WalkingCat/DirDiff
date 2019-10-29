@@ -42,7 +42,7 @@ int _tmain(int argc, _TCHAR* argv[])
 								fwprintf_s(out, L"\n");
 							}
 							fwprintf_s(out, L"   %lc %ls\n", prefix, file_name.c_str());
-							//printed_previous_file_name = printed_file_name = true;
+							printed_previous_file_name = printed_file_name = true;
 						}
 					};
 
@@ -63,13 +63,29 @@ int _tmain(int argc, _TCHAR* argv[])
 					const auto file_ext = tolower(filesystem::path(file_name).extension().wstring());
 					if (text_file_exts.find(file_ext) != text_file_exts.end()) {
 						const filesystem::path new_path(*new_file), old_path(*old_file);
+						diff_sequences(read_text_file(*new_file), read_text_file(*old_file),
+							[&](const wstring* new_line, const wstring* old_line) {
+								if (new_line && old_line) {
+									if (wcscmp(new_line->c_str(), old_line->c_str()) != 0) {
+										print_file_name('*');
+										fwprintf_s(out, L"     * %ls\n", new_line->c_str());
+										fwprintf_s(out, L"     $ %ls\n", old_line->c_str());
+									}
+								} else if (new_line) {
+									print_file_name('*');
+									fwprintf_s(out, L"     + %ls\n", new_line->c_str());
+								} else if (old_line) {
+									print_file_name('*');
+									fwprintf_s(out, L"     - %ls\n", old_line->c_str());
+								}
+							}
+						);
 
-						//TODO: diff textual file contents
-						if (filesystem::file_size(new_path) != filesystem::file_size(old_path)) {
-							print_file_name('*');
-							printf_s("     size: %I64u <-> %I64u\n", filesystem::file_size(new_path), filesystem::file_size(old_path));
-							return;
-						}
+						//if (filesystem::file_size(new_path) != filesystem::file_size(old_path)) {
+						//	print_file_name('*');
+						//	printf_s("     size: %I64u <-> %I64u\n", filesystem::file_size(new_path), filesystem::file_size(old_path));
+						//	return;
+						//}
 					}
 				}
 			);
