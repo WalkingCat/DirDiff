@@ -57,7 +57,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 
 					static const std::set<wstring_view> text_file_exts = {
-						L".inf_loc"
+						L".adml",
+						L".inf_loc",
 					};
 
 					const auto file_ext = tolower(filesystem::path(file_name).extension().wstring());
